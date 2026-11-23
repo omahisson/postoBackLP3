@@ -40,6 +40,7 @@ import br.edu.ifsudestemg.demo.model.repository.VendaJpaRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -57,6 +58,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final ClienteJpaRepository clienteRepository;
     private final FornecedorJpaRepository fornecedorRepository;
     private final FuncionarioJpaRepository funcionarioRepository;
+    private final PasswordEncoder passwordEncoder;
     private final ProdutoJpaRepository produtoRepository;
     private final CombustivelJpaRepository combustivelRepository;
     private final ServicoJpaRepository servicoRepository;
@@ -139,6 +141,16 @@ public class DatabaseSeeder implements CommandLineRunner {
                     gerente("Carla Mendes", "333.333.333-33", postoCentro),
                     colaborador("Diego Alves", "444.444.444-44", postoNorte)
             ));
+        }
+
+        // Corrige apenas as senhas de exemplo gravadas pelas versoes anteriores do seed.
+        for (String matricula : List.of("GER-001", "COL-001")) {
+            funcionarioRepository.findByMaticula(matricula)
+                    .filter(funcionario -> "senha1234".equals(funcionario.getSenha()))
+                    .ifPresent(funcionario -> {
+                        funcionario.setSenha(passwordEncoder.encode(funcionario.getSenha()));
+                        funcionarioRepository.save(funcionario);
+                    });
         }
 
         Produto oleo;
@@ -375,7 +387,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         funcionario.setMaticula(matricula);
         funcionario.setSalario(new BigDecimal("2500.00"));
         funcionario.setDataAdmissao(LocalDate.now().minusMonths(6));
-        funcionario.setSenha("senha1234");
+        funcionario.setSenha(passwordEncoder.encode("senha1234"));
         funcionario.setSetor(setor);
     }
 
